@@ -1,0 +1,46 @@
+#mensajeAnulado {
+    color: red;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(45deg);
+    font-size: 50px;
+    font-weight: bold;
+    display: none;
+    z-index: 999;
+}
+
+#loading-spinner {
+    position: fixed; /* Fijo en la ventana */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Centrado */
+    z-index: 1000; /* Asegura que esté sobre otros elementos */
+    display: flex; /* Usar flexbox para centrar contenido */
+    flex-direction: column; /* Apilar el spinner y el texto */
+    align-items: center; /* Centrar horizontalmente */
+    justify-content: center; /* Centrar verticalmente */
+    padding: 0; /* Elimina el padding */
+}
+
+.spinner {
+    width: 50px;  /* Ajusta el tamaño del spinner */
+    height: 50px; /* Ajusta el tamaño del spinner */
+    border: 6px solid rgba(0, 0, 0, 0.3); /* Color del borde */
+    border-top: 6px solid #3498db; /* Color de la parte superior */
+    border-radius: 50%; /* Redondear */
+    animation: spin 1s linear infinite; /* Animación de rotación */
+}
+
+p {
+    margin-top: 10px; /* Espacio entre el spinner y el texto */
+    font-size: 16px; /* Tamaño de fuente del texto */
+    color: #333; /* Color del texto */
+    text-align: center; /* Centrar el texto */
+}
+
+/* Animación del spinner */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
