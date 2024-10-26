@@ -1,0 +1,8 @@
+.form-group label {
+    margin-bottom: 1px; /* Puedes ajustar este valor según lo necesites */
+}
+
+/* Reducir el espacio horizontal entre los inputs */
+.form-group {
+    margin-right: 0px; /* Ajusta este valor para el espacio entre inputs, menos es menos espacio */
+}
