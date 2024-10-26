@@ -1,4 +1,4 @@
-{{-- resources/views/tablaproductos.blade.php --}}
+{{-- resources/views/components/productos.blade.php --}}
 <div class="card">
     <div class="table-responsive">
         <table
