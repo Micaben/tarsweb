@@ -68,27 +68,44 @@
                                                 ['name' => 'Total', 'align' => 'right'],
                                                 ['name' => 'id', 'align' => 'center']
                                                 ]"
-                                            :url="route('listar-mostrarRegistrosCotizacion')"
-                                            :routeName="'registroCotizacion'"
-                                            :routeDetalleName="'registroCotizaciondetalle'" :inputs="['cboserie', 'numeronota', 'fechaproceso', 'cboconcepto', 'cboproveedor', 'proveedor', 'cbomoneda', 'vigencia', 'ordencompra', 'cboalmacen', 'comentarios', 'iddeldocumento', 'subtotal', 'inigv', 'igv', 'lblmoneda', 'totalSuma']"
+                                            :url="route('listar-mostrarRegistrosComprobantes')"
+                                            :routeName="'registroComprobantes'"
+                                            :routeDetalleName="'registroComprobantesdetalle'" :inputs="['cbocomprobante','cboserie', 'numeronota', 'fechaproceso', 'cboconcepto', 'cboproveedor', 'proveedor', 'cbocondicion','plazo','fechav','cbomoneda', 'cbovendedor', 'ordencompra', 'cboalmacen','direccion','tipod','ubigeo','tipodocumento','codafec','tipoperacion','typecod','tipomoneda','totalin','mtoretencion','netopagar','inafecto', 'comentarios', 'iddeldocumento', 'subtotal', 'conretencion','inigv', 'igv', 'lblmoneda', 'totalSuma']"
                                             :inputMapping="[
-                                            'cboserie' => 'seriecot',
-                                            'numeronota' => 'numcot',
-                                            'fechaproceso' => 'FechaCot',
+                                            'direccion' => 'direccion',
+                                            'tipod' => 'TipoDocIdR', 
+                                            'ubigeo' => 'ubigeo',    
+                                            'tipodocumento'=> 'TipoDocumento',
+                                            'codafec'=> 'Cod_AfectaIGV',
+                                            'tipoperacion'=> 'TipOperacion',
+                                            'typecod'=> 'com_InvoiceTypeCode',
+                                            'tipomoneda'=> 'tipomoneda',
+                                            'totalin'=> 'ImporteTotal',
+                                            'mtoretencion'=> 'Mto_Retencion',
+                                            'netopagar'=> 'com_NetoPagar',
+                                            'inafecto'=> 'inafecto',
+                                            'cbocomprobante' => 'TipoDocumento',
+                                            'cboserie' => 'serie',
+                                            'numeronota' => 'numero',
+                                            'fechaproceso' => 'FechaEmision',
                                             'cboconcepto' => 'Concepto',
                                             'cboproveedor' => 'ruc',
                                             'proveedor' => 'ruc',
+                                            'cbocondicion' => 'condicion',
+                                            'plazo' => 'plazo',
+                                            'fechav' => 'FechaV',
                                             'cbomoneda' => 'Moneda',
-                                            'vigencia' => 'Validez',
-                                            'ordencompra' => 'OCompra',
+                                            'ordencompra' => 'NumOCompra',
                                             'cboalmacen' => 'almacen',
+                                            'cbovendedor' => 'vendedor',     
                                             'comentarios' => 'Referencia',
                                             'iddeldocumento' => 'id',
-                                            'subtotal' => 'baseimp',
-                                            'inigv' => 'in_igv',
-                                            'igv' => 'igv',
+                                            'subtotal' => 'BaseImponible',
+                                            'conretencion' => 'com_Retencion',
+                                            'inigv' => 'com_IGV',
+                                            'igv' => 'IGV',
                                             'lblmoneda' => 'Factor2',
-                                            'totalSuma' => 'Total'
+                                            'totalSuma' => 'ImporteTotal'
                                             ]" :messageId="'mensajeAnulado'"  :showTransporte="false"  
                                              :showAnuladoMessage="true" />
                                         </div>
@@ -152,6 +169,7 @@
         <script src="{{ asset('js/handleFormSubmit.js') }}"></script>
         <script src="{{ asset('js/imprimir.js') }}"></script>
         <script src="{{ asset('js/anular.js') }}"></script>
+        <script src="{{ asset('js/calculos.js') }}"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
@@ -170,9 +188,18 @@
                
             });
 
+            function actualizarCbocomprobanteDesdeJson(valorRespuesta) {
+                var cbocomprobante = document.getElementById('cbocomprobante');
+                if (cbocomprobante) {
+                    cbocomprobante.value = valorRespuesta;
+                    cbocomprobante.dispatchEvent(new Event('change'));
+                }
+            }
+
             document.addEventListener('DOMContentLoaded', function () {
                 var cbocomprobante = document.getElementById('cbocomprobante');
                 var cboserie = document.getElementById('cboserie');
+
                 if (cbocomprobante) {
                     cbocomprobante.addEventListener('change', function () {
                         var valorSeleccionado = this.value;
@@ -182,19 +209,16 @@
                         document.getElementById("tipodocumento").value = valorSeleccionado;
                     });
                 } else {
-                    console.error("Elemento con ID 'cboserie' no encontrado.");
+                    console.error("Elemento con ID 'cbocomprobante' no encontrado.");
                 }
-            });
 
-            document.addEventListener('DOMContentLoaded', function () {
-                var cboSerie = document.getElementById('cboserie');
-                if (cboSerie) {
-                    cboSerie.addEventListener('change', function () {
+                if (cboserie) {
+                    cboserie.addEventListener('change', function () {
+                        
                         var selectedOption = this.options[this.selectedIndex];
                         var valorSeleccionado = this.value;
-                        var customAttribute = selectedOption.getAttribute('data-custom-attribute');  // Access custom attribute
-                        var url = "{{ url('obtener-ultimonumero') }}/" + encodeURIComponent(customAttribute) + "/" + encodeURIComponent(
-                            valorSeleccionado);
+                        var customAttribute = selectedOption.getAttribute('data-custom-attribute');
+                        var url = "{{ url('obtener-ultimonumero') }}/" + encodeURIComponent(customAttribute) + "/" + encodeURIComponent(valorSeleccionado);
                         obtenerultimoNumero("#numeronota", url);
                     });
                 } else {
@@ -205,13 +229,7 @@
             document.getElementById('cboconcepto').addEventListener('change', function () {
                 actualizarTotalesInafecto();
             });
-
-            document.addEventListener('DOMContentLoaded', function () {     
-                const conretencion = document.getElementById('conretencion');           
-                    if (conretencion.checked) {
-                        actualizarTotalesRet();
-                    }                    
-            });
+            
 
             function formatErrorMessages(errors) {
                 if (Array.isArray(errors)) {
@@ -222,16 +240,16 @@
             }
 
             function modalNuevoRegistro() {
-                clearFormInputsSelects('form-pedidos', 'cboserie');
-                limpiarTablaDataTable('form-pedidos', 'tablaProductos');
-                $("#inigv").prop("checked", true);
+                clearFormInputsSelects('form-documentos', 'cbocomprobante');
+                limpiarTablaDataTable('form-documentos', 'tablaProductos');
+                $("#inigv").prop("checked", false);
                 $("#conretencion").prop("checked", false);
                 $("#iskardex").prop("checked", false);
                 $("#iscortesia").prop("checked", false);
                 var fechaActual = new Date().toISOString().split('T')[0];
                 document.getElementById('fechaproceso').value = fechaActual;
+                document.getElementById('fechav').value = fechaActual;
                 document.getElementById('mensajeAnulado').style.display = 'none';
-                document.getElementById("tipodocumento").value = '09';
                 document.getElementById('btnAgregar').disabled = false;
             }
 
@@ -258,38 +276,8 @@
                 anularRegistro('tablaIngresos', 'iddeldocumento', '/anularRegistroComprobante', 'No hay documentos para anular.');
             });
 
-            document.addEventListener('DOMContentLoaded', function () {
-                const igvCheckbox = document.getElementById('inigv');
-                const IGV_RATE = 0.18;
-
-                const subtotalInput = document.getElementById('subtotal');
-                const igvInput = document.getElementById('igv');
-                const totalSumaInput = document.getElementById('totalSuma');
-
-                // Función para calcular IGV y actualizar los campos
-                function actualizarTotales() {
-                    let subtotal = parseFloat(subtotalInput.value) || 0;
-                    let igv = 0;
-                    let total = subtotal;
-
-                    if (igvCheckbox.checked) {
-                        igv = subtotal * IGV_RATE;
-                        total += igv;
-                    }
-                    subtotalInput.value = subtotal.toFixed(2);
-                    igvInput.value = igv.toFixed(2);
-                    totalSumaInput.value = total.toFixed(2);
-                }
-
-                igvCheckbox.addEventListener('change', function () {
-                    actualizarTotales();
-                });
-
-                actualizarTotales();
-            });
-
-            document.addEventListener('DOMContentLoaded', function () {
-                initRetencionCalculation();
+            document.addEventListener('DOMContentLoaded', function() {
+                inicializarCalculoTotales();
             });
 
             function validarFormulario(formularioId, camposFormulario) {

@@ -13,7 +13,7 @@ class Comprobantes_Allowance extends Model
      * @var array<int, string>
      */
 
-     protected $table = 'comprobantes_Allowance';
+     protected $table = 'comprobantes_allowancecharge';
   
      protected $fillable = [
         'Id',    

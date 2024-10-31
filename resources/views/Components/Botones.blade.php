@@ -117,7 +117,7 @@
         <div style="text-align: right;"
             class="custom-control custom-switch custom-switch-off-danger custom-switch-on-success">
             <input type="hidden" name="inigv" value="0">
-            <input type="checkbox" class="custom-control-input" id="inigv" name="inigv" value="1" checked>
+            <input type="checkbox" class="custom-control-input" id="inigv" name="inigv" value="1" >
             <label class="custom-control-label" for="inigv">In igv?</label>
         </div>
     </div>

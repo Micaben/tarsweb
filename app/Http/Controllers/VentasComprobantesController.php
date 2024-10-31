@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Log;
+use App\Services\SunatService;
 use DOMDocument;
 use DateTime;
 use Greenter\XMLSecLibs\Sunat\SignedXml;
@@ -24,6 +25,13 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class VentasComprobantesController extends Controller
 {
+    protected $sunatService;
+    
+
+    public function __construct(SunatService $sunatService)
+    {
+        $this->sunatService = $sunatService;
+    }
 
     public function mostrarComprobantesMantenimiento()
     {
@@ -46,7 +54,8 @@ class VentasComprobantesController extends Controller
             $numero = ltrim($request->input('numeronota'), 0);
             $Iddoc = (int) $request->input('iddeldocumento'); // Aseguramos que el Iddoc sea un entero
             $isNew = !$Iddoc || empty($Iddoc);
-
+            $TipoDocumento = $request->input('tipodocumento');
+            $empresa = session('empresa');
             // Insertar o actualizar Cabmovpro y Movalmacencab
             $identpedidoId = $this->guardarComprobantescab($request, $isNew, $Iddoc);
             $this->guardarComprobantesdet($request, $identpedidoId, $isNew, $Iddoc);
@@ -56,10 +65,12 @@ class VentasComprobantesController extends Controller
             $this->guardarComprobantes_Allowance($request, $identpedidoId, $isNew, $Iddoc);
             $this->guardarComprobantesd_tributos($request, $identpedidoId, $isNew, $Iddoc);
             $this->guardarComprobantesLeyendas($request, $identpedidoId, $isNew, $Iddoc);
-            $this->CrearXMLComprobante($identpedidoId);
-            //if ($xmlGeneradoCorrectamente) {
-            //$this->send($fecha, session('empresa'), '09', $serie, $numero, $identpedidoId);
-            //}
+            $xmlGeneradoCorrectamente = $this->CrearXMLComprobante($identpedidoId);
+            if ($xmlGeneradoCorrectamente) {
+                $this->sunatService-> EnviarComprobanteElectronico($fecha, $empresa, $TipoDocumento, $serie, $numero);
+
+               
+            }
             //$this->generarReportePDFComprobante($identpedidoId);
             DB::commit();
             return response()->json(['success' => true, 'id' => $identpedidoId]);
@@ -82,7 +93,7 @@ class VentasComprobantesController extends Controller
                 $identpedido->kardex = '1';
                 $identpedido->fecha = $request->input('fechaproceso');
                 $identpedido->serie = $request->input('cboserie_text');
-                $identpedido->numero = $request->input('numeronota');
+                $identpedido->numero = $numero = ltrim($request->input('numeronota'), 0);
                 $identpedido->td = $request->input('tipodocumento');
                 $identpedido->save();
                 $identpedidoId = $identpedido->id;
@@ -103,7 +114,7 @@ class VentasComprobantesController extends Controller
             //\Log::info($request->all());
             $comcab->TipoDocumento = $request->input('tipodocumento');
             $comcab->Serie = $request->input('cboserie_text');
-            $comcab->Numero = $request->input('numeronota');
+            $comcab->Numero = $numero = ltrim($request->input('numeronota'), 0);
             $comcab->Ruc = session('empresa');
             $comcab->RazonSocialE = session('razonsocialempresa');
             $comcab->TipoDocIdR = $request->input('tipod');
@@ -138,7 +149,7 @@ class VentasComprobantesController extends Controller
             $comcab->condicionVenta = $request->input('cbocondicion_text');
             $comcab->NumOCompra = $request->input('ordencompra');
             $comcab->Cod_Bolsa = $request->input('proveedor');
-            $comcab->UbigeoEmisor = $request->input('ubigeo');
+            $comcab->UbigeoEmisor = '15032';
             $comcab->MtoIGVBase = $request->input('igv');
             $comcab->PorcIGVBase = '18.00';
             $comcab->OtrosCargos = '0.00';
@@ -158,7 +169,7 @@ class VentasComprobantesController extends Controller
             $comcab->fechav = $request->input('fechav');
             $comcab->com_PayableAmount = $request->input('totalSuma');
             $comcab->com_InvoiceTypeCode = $request->input('typecod');
-            $comcab->com_NetoPagar = $request->input('totalSuma');
+            $comcab->com_NetoPagar = $request->input('netopagar');
             $comcab->com_Vendedor = $request->input('cbovendedor_text');
             $comcab->almacen = $request->input('cboalmacen');
             $comcab->concepto = $request->input('cboconcepto');
@@ -242,10 +253,10 @@ class VentasComprobantesController extends Controller
 
     public function guardarComprobantes_Allowance(Request $request, $identpedidoId, $isNew, $Iddoc)
     {
-        $codafec = $request->input('codafec');
+        $conRetencion = $request->input('conretencion', 0);
         $mtoretencion = $request->input('mtoretencion');
 
-        if ($mtoretencion > 0 && $codafec == '40') {
+        if ($conRetencion ) {
             $comcab = new Comprobantes_Allowance();
             $comcab->id_comprobantes = $identpedidoId;
             $comcab->com_AllowanceCharge_ChargeIndicator = 'false';
@@ -398,7 +409,7 @@ class VentasComprobantesController extends Controller
             $detalle->com_PaymentTerms_ID = 'FormaPago';
             $detalle->com_PaymentTerms_PaymentMeansID = 'Contado'; // Si es plazo negativo, pago contado
             $detalle->com_PaymentTerms_PaymentPercent = '0.00';
-            $detalle->com_PaymentTerms_Amount = $request->input('totalSuma');
+            $detalle->com_PaymentTerms_Amount = $request->input('netopagar');
             $detalle->com_PaymentTerms_PaymentDueDate = $request->input('fechaproceso');
             $detalle->com_PaymentTerms_currencyID = $tipomoneda;
             $detalle->com_PaymentTerms_Amount_PEN = '0.00';
@@ -408,6 +419,7 @@ class VentasComprobantesController extends Controller
 
         } else {
             Log::info('Cuotas:', ['cuotas' => $cuotas]);
+            
             if (empty($cuotas) || count($cuotas) === 0) {
                 Log::info('No hay cuotas, insertando registros vacíos');
 
@@ -426,7 +438,7 @@ class VentasComprobantesController extends Controller
                     }
 
                     $detalle->com_PaymentTerms_PaymentPercent = '0.00';
-                    $detalle->com_PaymentTerms_Amount = $cuotas['netopagar'];
+                    $detalle->com_PaymentTerms_Amount = $request->input('netopagar');
                     $detalle->com_PaymentTerms_PaymentDueDate = $request->input('fechaproceso');
                     $detalle->com_PaymentTerms_currencyID = $tipomoneda;
                     $detalle->com_PaymentTerms_Amount_PEN = '0.00';
@@ -443,7 +455,7 @@ class VentasComprobantesController extends Controller
                 $detalle->com_PaymentTerms_ID = 'FormaPago';
                 $detalle->com_PaymentTerms_PaymentMeansID = 'Credito';
                 $detalle->com_PaymentTerms_PaymentPercent = '0.00';
-                $detalle->com_PaymentTerms_Amount = $request->input('totalcuota');
+                $detalle->com_PaymentTerms_Amount = $request->input('netopagar');
                 $detalle->com_PaymentTerms_PaymentDueDate = $cuotas[0]['fecha'];
                 $detalle->com_PaymentTerms_currencyID = $tipomoneda;
                 $detalle->com_PaymentTerms_Amount_PEN = '0.00';
@@ -456,10 +468,10 @@ class VentasComprobantesController extends Controller
                     $detalle = new Comprobantes_paymentterms;
                     $detalle->id_comprobantes = $identpedidoId;
                     $detalle->com_PaymentTerms_ID = 'FormaPago';
-                    $numeroCuotaFormateada = str_pad($cuota['numeroCuota'], 3, '0', STR_PAD_LEFT);
+                    $numeroCuotaFormateada = 'Cuota' . str_pad('001', 3, '0', STR_PAD_LEFT); 
                     $detalle->com_PaymentTerms_PaymentMeansID = $numeroCuotaFormateada;
                     $detalle->com_PaymentTerms_PaymentPercent = '0.00';
-                    $detalle->com_PaymentTerms_Amount = $cuota['netopagar'];
+                    $detalle->com_PaymentTerms_Amount = $cuota['monto'];
                     $detalle->com_PaymentTerms_PaymentDueDate = $cuota['fecha'];
                     $detalle->com_PaymentTerms_currencyID = $tipomoneda;
                     $detalle->com_PaymentTerms_Amount_PEN = '0.00';
@@ -471,7 +483,7 @@ class VentasComprobantesController extends Controller
         }
     }
 
-    public function mostrarRegistrosPedidos(Request $request)
+    public function mostrarRegistrosComprobantes(Request $request)
     {
         $mes = $request->query('mes');
         $anio = $request->query('anio');
@@ -483,17 +495,17 @@ class VentasComprobantesController extends Controller
         ]);
 
         $sql = "SELECT CONCAT(a.serie, '-', a.numero) AS Documento,
-                   DATE_FORMAT(Fecha, '%d/%m/%Y') AS Fecha,
-                   a.cliente,a.OCompra as oc,
+                   DATE_FORMAT(a.FechaEmision, '%d/%m/%Y') AS Fecha,
+                   a.NumDocIdR,a.NumOCompra as oc,
                    b.RazonSocial,
-                   a.UserCre, a.estado, T.factor2, a.total,
+                   a.usercre, a.EstadoComprobante, T.factor2, a.ImporteTotal,
                    a.id
-            FROM notapedidocab a
-            LEFT JOIN cliente b ON a.Cliente = b.ruc
+            FROM comprobantesefact a
+            LEFT JOIN cliente b ON a.NumDocIdR = b.ruc
             left join tablavarios t on t.cod=a.moneda
-            WHERE a.estado IN ('A', 'G', 'P')
-              AND MONTH(Fecha) = ?
-              AND YEAR(Fecha) = ?
+            WHERE a.EstadoComprobante IN ('A', 'G', 'P')
+              AND MONTH(FechaEmision) = ?
+              AND YEAR(FechaEmision) = ?
                and t.clase='MON'
             ORDER BY Fecha ASC";
 
@@ -502,32 +514,32 @@ class VentasComprobantesController extends Controller
             return [
                 'documento' => $row->Documento,
                 'fecha' => $row->Fecha,
-                'ruc' => $row->cliente,
+                'ruc' => $row->NumDocIdR,
                 'cliente' => $row->RazonSocial,
                 'o/compra' => $row->oc,
-                'estado' => $row->estado,
+                'estado' => $row->EstadoComprobante,
                 'mda' => $row->factor2,
-                'total' => $row->total,
+                'total' => $row->ImporteTotal,
                 'id' => $row->id,
             ];
         }, $resultados);
         return response()->json($notaIngresos);
     }
 
-    public function buscarregistroPedido(Request $request, $id)
+    public function buscarregistroComprobantes(Request $request, $id)
     {
         try {
-            $query = "select a.serie,a.numero,b.ruc,b.RazonSocial,a.Fecha,
-            a.Concepto, a.Moneda,a.OCompra,a.Referencia, a.Estado,a.usercre,
-            a.valortotal,a.baseimp,a.igv,tv.Factor2,a.Total,cv.descripcion,v.nombres,
-            tv.Deascripcion,a.id,e.Descripcion,c.Descripcion,a.in_igv,dd.cod
-            from notapedidocab a inner join Cliente b on b.ruc=a.Cliente
+            $query = "select a.TipoDocumento,a.serie,a.numero,b.ruc,b.RazonSocial,a.FechaEmision,
+            a.Concepto, a.Moneda,a.NumOCompra,a.Referencia, a.EstadoComprobante,a.usercre,
+            a.BaseImponible,a.BaseImponible,a.IGV,tv.Factor2,a.ImporteTotal,cv.id as condicion, a.vendedor,
+            tv.Deascripcion,a.id,e.Descripcion,c.Descripcion,a.com_IGV, a.plazo, a.FechaV, a.com_Retencion,
+            b.direccion,b.ubigeo, a.Cod_AfectaIGV, a.TipoDocIdR, a.tipomoneda,a.ImporteTotal, a.com_NetoPagar ,a.inafecto,a.TipOperacion, a.Mto_Retencion, a.com_InvoiceTypeCode
+            from comprobantesefact a inner join Cliente b on b.ruc=a.NumDocIdR
              left join ConceptoVenta c on c.id=a.concepto
              left join Condicionventa cv on cv.id=a.condicion
              left join vendedores v on v.id=a.vendedor 
              left join TablaVarios tv on a.Moneda=tv.cod and tv.clase ='MON' 
-             left join TablaVarios dd on dd.cod=b.TipoD and dd.Clase='TD' 
-             left join Estados e ON e.Estado = a.Estado where a.id=?";
+             left join Estados e ON e.Estado = a.EstadoComprobante where a.id=?";
 
             $result = DB::select($query, [$id]);
 
@@ -541,17 +553,17 @@ class VentasComprobantesController extends Controller
         }
     }
 
-    public function buscardetallePedido($id)
+    public function buscardetalleComprobantes($id)
     {
         try {
             // Consulta para obtener los datos
-            $detalleGuia = Comprobantesdet::selectRaw('item, n.Producto as producto, p.Descripcion, color.Descripcion AS color, u.Umedida, p.Ancho, n.Cantidad, n.PrecioU as Precio, n.Total_neto as Totalpro, CASE WHEN n.detalle IS NULL THEN "" ELSE n.detalle END AS detalle')
-                ->from('notapedidodetalle as n')
-                ->join('productos as p', 'p.codproducto', '=', 'n.Producto')
+            $detalleGuia = Comprobantesdet::selectRaw('NumeroOrden as item, n.cod_Producto as producto, p.Descripcion, color.Descripcion AS color, u.Umedida, p.Ancho, n.Cantidad, n.ValorUnitario as Precio, n.Subtotal as Totalpro, CASE WHEN n.detalle IS NULL THEN "" ELSE n.detalle END AS detalle')
+                ->from('comprobantesd as n')
+                ->join('productos as p', 'p.codproducto', '=', 'n.cod_Producto')
                 ->leftJoin('Color as color', 'color.Id', '=', 'p.IdColor')
                 ->leftJoin('UnidadMed as u', 'u.Umedida', '=', 'p.IdUMedida')
                 ->where('n.id', $id)
-                ->orderBy('n.item')
+                ->orderBy('n.NumeroOrden')
                 ->get();
 
             // Retornar los datos como JSON
@@ -582,7 +594,7 @@ class VentasComprobantesController extends Controller
         }
     }
 
-    function CrearXMLComprobante($idGuia)
+    function CrearXMLComprobante($idGuia): bool
     {
         $guiaRemisionObj = DB::table('comprobantesefact as ce')
             ->join('comprobantesd_tributos as ct', 'ct.Id_Comprobantes', '=', 'ce.Id')
@@ -624,6 +636,10 @@ class VentasComprobantesController extends Controller
         $cuotas = DB::table('Comprobantes_paymentterms')
             ->where('Id_Comprobantes', $idGuia)
             ->get();
+    
+        $allowance = DB::table('comprobantes_allowancecharge as ca')
+            ->where('ca.Id_Comprobantes', $idGuia)
+            ->first();
 
         $leyendas = DB::table('comprobantesl')
             ->where('Id_Comprobantes', $idGuia)
@@ -758,6 +774,16 @@ class VentasComprobantesController extends Controller
                     <cbc:PaymentDueDate>' . $v->com_PaymentTerms_PaymentDueDate . '</cbc:PaymentDueDate>
                     </cac:PaymentTerms>';
         }
+
+        if ($allowance):
+            $xml .= ' <cac:AllowanceCharge>
+                        <cbc:ChargeIndicator>' . $allowance->com_AllowanceCharge_ChargeIndicator . '</cbc:ChargeIndicator>
+                        <cbc:AllowanceChargeReasonCode>' . $allowance->com_AllowanceCharge_AllowanceChargeReasonCode . '</cbc:AllowanceChargeReasonCode>
+                        <cbc:MultiplierFactorNumeric>' . $allowance->com_AllowanceCharge_MultiplierFactorNumeric . '</cbc:MultiplierFactorNumeric>
+                        <cbc:Amount currencyID="' . $guiaRemisionObj->TipoMoneda . '">' . $allowance->com_AllowanceCharge_Amount . '</cbc:Amount>
+                        <cbc:BaseAmount currencyID="' . $guiaRemisionObj->TipoMoneda . '">' . $allowance->com_AllowanceCharge_BaseAmount . '</cbc:BaseAmount>
+                    </cac:AllowanceCharge>';
+        endif;
 
         $xml .= '<cac:TaxTotal>
                         <cbc:TaxAmount currencyID="' . $guiaRemisionObj->TipoMoneda . '">' . $guiaRemisionObj->IGV . '</cbc:TaxAmount>
@@ -897,5 +923,6 @@ class VentasComprobantesController extends Controller
         return view('Notadebito');
     }
 
+    
 
 }

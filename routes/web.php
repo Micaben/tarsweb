@@ -327,6 +327,9 @@ Route::get('/listar-registroguiaremision', [VentasGuiaremisionController::class,
 //COMPROBANTES
 Route::get('/comprobantes', [VentasComprobantesController::class, 'mostrarComprobantesMantenimiento'])->name('comprobantes.mantenimiento');
 Route::post('/guardar-comprobantes', [VentasComprobantesController::class, 'guardarComprobantes']);
+Route::get('/mostrarRegistrosComprobantes', [VentasComprobantesController::class, 'mostrarRegistrosComprobantes'])->name('listar-mostrarRegistrosComprobantes');
+Route::get('/buscarRegistroComprobantes/{id}', [VentasComprobantesController::class, 'buscarregistroComprobantes'])->name('buscar-registroComprobantes');
+Route::get('/buscarDetalleComprobantes/{id}', [VentasComprobantesController::class, 'buscardetalleComprobantes'])->name('buscar-detalleComprobantes');
 //NOTA DE CREDITO
 Route::get('/notacredito', [VentasComprobantesController::class, 'mostrarNotacreditoMantenimiento'])->name('notacredito.mantenimiento');
 

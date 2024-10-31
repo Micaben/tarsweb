@@ -724,7 +724,6 @@ class VentasGuiaremisionController extends Controller
                 file_put_contents($rutaCompletaCDR, $cdrDecodificado);
                 $zip = new \ZipArchive;
                 if ($zip->open($rutaCompletaCDR) === TRUE) {
-                    // Extraer el contenido en el directorio correspondiente
                     $zip->extractTo($directorio);  // Corregido aquí
                     $zip->close();
 

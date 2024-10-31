@@ -92,7 +92,7 @@
 
         function generarCuotas() {
             var numeroCuotas = parseInt(document.getElementById('numerocuota').value, 10);
-            var totalcuota = parseFloat(document.getElementById('totalcuota').value);
+            var totalcuota = parseFloat(document.getElementById('total').value);
             var montoretencion = parseInt(document.getElementById('retencioncuota').value, 10);
             var netopagar = parseFloat(document.getElementById('netoapagar').value);
             var fechaCuota = document.getElementById('fechacuota').value;
@@ -103,7 +103,7 @@
                 tablaCuotas.innerHTML = '';
 
                 // Calcular el monto por cuota
-                var montoPorCuota = (totalcuota / numeroCuotas).toFixed(2);
+                var montoPorCuota = (netopagar / numeroCuotas).toFixed(2);
                 cuotasGuardadas = [];
                 // Generar las filas de la tabla
                 for (var i = 1; i <= numeroCuotas; i++) {
@@ -111,7 +111,7 @@
 
                     // Columna de número de cuota
                     var celdaNumero = document.createElement('td');
-                    var numeroFormateado = String(i).padStart(3, '0'); // Formatear número de cuota a 3 dígitos
+                    var numeroFormateado = String(i).padStart(3, '0'); 
                     celdaNumero.textContent = numeroFormateado;
                     fila.appendChild(celdaNumero);
 
@@ -139,10 +139,7 @@
                     var cuota = {
                         numeroCuota: i,
                         fecha: fechaCuota,
-                        monto: montoPorCuota,
-                        
-                        montoretencion: montoretencion,
-                        netopagar: netopagar
+                        monto: montoPorCuota,                                                
                     };
                     cuotasGuardadas.push(cuota);
                 }

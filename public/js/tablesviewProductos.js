@@ -124,13 +124,56 @@ function actualizarTotal(tablaID, checkIgv) {
             total = subtotal * SIGV_RATE;
             
         }if (checkIgv) {
-            subtotal = subtotal / SIGV_RATE;
-             igv = subtotal * igvRate;
-             total = subtotal * SIGV_RATE;
+            subtotal = cantidad * precio ;
+            tr.find("td:nth-child(7) span").text(subtotal.toFixed(2));
+            let totalSuma = 0;
+            $("td:nth-child(7) span").each(function() {
+                totalSuma += parseFloat($(this).text()) || 0; // Sumar el valor de cada celda en la columna 7
+            });
+        
+            let subtotalBase = totalSuma / 1.18; 
+            let igv = subtotalBase * 0.18;       
+        
+            $("#subtotal").val(subtotalBase.toFixed(2));
+            $("#igv").val(igv.toFixed(2));
+            $("#totalSuma").val(totalSuma.toFixed(2));
+            let retencion = 0;
+            if (conRetencion) {
+                retencion = totalSuma * RET_RATE;
+                retencionInput.value = retencion.toFixed(2);
+            }
+            $("#total").val(totalSuma.toFixed(2));
+            $("#retencioncuota").val(retencion.toFixed(2));
+            let netpag = totalSuma - retencion;
+            $("#netoapagar").val(netpag.toFixed(2));
+            $("#totalin").val(totalSuma.toFixed(2));
+            $("#netopagar").val(netpag.toFixed(2));
         } else {
             subtotal = cantidad * precio ;
-             igv = subtotal * igvRate;
-             total = subtotal + igv;
+            tr.find("td:nth-child(7) span").text(subtotal.toFixed(2));
+            let totalSuma = 0;
+            $("td:nth-child(7) span").each(function() {
+                totalSuma += parseFloat($(this).text()) || 0; // Sumar el valor de cada celda en la columna 7
+            });
+        
+            let subtotalBase = totalSuma; 
+            let igv = subtotalBase * 0.18; 
+            let suma = subtotalBase + igv;
+            $("#subtotal").val(subtotalBase.toFixed(2));
+            $("#igv").val(igv.toFixed(2));
+            $("#totalSuma").val(suma.toFixed(2));
+            let retencion = 0;
+            if (conRetencion) {
+                retencion = suma * RET_RATE;
+                retencionInput.value = retencion.toFixed(2);
+            }
+
+            $("#total").val(suma.toFixed(2));
+            $("#retencioncuota").val(retencion.toFixed(2));
+            let netpag = suma - retencion;
+            $("#netoapagar").val(netpag.toFixed(2));
+            $("#totalin").val(suma.toFixed(2));
+            $("#netopagar").val(netpag.toFixed(2));
         }
 
         // Actualiza el subtotal en la fila
@@ -139,18 +182,7 @@ function actualizarTotal(tablaID, checkIgv) {
         totalIGV += igv;
         totalSuma += total;
     }); 
-    let retencion = 0;
-    if (conRetencion) {
-        retencion = totalSuma * RET_RATE;
-        retencionInput.value = retencion.toFixed(2);
-    }
-    $("#subtotal").val(totalGeneral.toFixed(2));
-    $("#igv").val(totalIGV.toFixed(2));
-    $("#totalSuma").val(totalSuma.toFixed(2));
-    $("#total").val(totalSuma.toFixed(2));
-    $("#retencioncuota").val(retencion.toFixed(2));
-    let netpag = totalSuma - retencion;
-    $("#netoapagar").val(netpag.toFixed(2));
+   
 }
 
 function agregarAFilaProductos(fila, tablaID) {
@@ -174,7 +206,7 @@ function agregarAFilaProductos(fila, tablaID) {
             td.text(tabla.children().length + 1); // Asigna el índice
         } else if (columna.editable) {
             var input = $(
-                '<input type="number" step="0.01" min="1" value="1" style="width: ' +
+                '<input type="number" step="0.01" min="0.0" value="1" style="width: ' +
                     columna.width +
                     ';">'
             );
@@ -294,4 +326,10 @@ function actualizarTotalesInafecto() {
         document.getElementById("igv").value = 0.0;
         ininafecto.value = total.toFixed(2); // Fija dos decimales
     }
+}
+
+function addCommas(num) {
+    var parts = num.toString().split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return parts.join(".");
 }

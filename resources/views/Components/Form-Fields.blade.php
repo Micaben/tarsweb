@@ -31,32 +31,44 @@
     @endif
 
     @if($showCodafec ?? true)
-        <div class="form-group col-sm-2 mb-2">
+        <div class="form-group col-sm-1 mb-2">
             <input id="codafec" name="codafec" type="text" class="form-control form-control-sm" readonly="">
         </div>
     @endif
 
     @if($showTipoperacion ?? true)
-        <div class="form-group col-sm-2 mb-2">
+        <div class="form-group col-sm-1 mb-2">
             <input id="tipoperacion" name="tipoperacion" type="text" class="form-control form-control-sm" readonly="">
         </div>
     @endif
 
     @if($showTypecod ?? true)
-        <div class="form-group col-sm-2 mb-2">
+        <div class="form-group col-sm-1 mb-2">
             <input id="typecod" name="typecod" type="text" class="form-control form-control-sm" readonly="">
         </div>
     @endif
 
     @if($showTipomoneda ?? true)
-        <div class="form-group col-sm-2 mb-2">
+        <div class="form-group col-sm-1 mb-2">
             <input id="tipomoneda" name="tipomoneda" type="text" class="form-control form-control-sm" readonly="">
+        </div>
+    @endif
+
+    @if($showTotal ?? true)
+        <div class="form-group col-sm-2 mb-2">
+            <input id="totalin" name="totalin" type="text" class="form-control form-control-sm" readonly="">
         </div>
     @endif
 
     @if($showMontoRetencion ?? true)
         <div class="form-group col-sm-2 mb-2">
             <input id="mtoretencion" name="mtoretencion" type="text" class="form-control form-control-sm" readonly="">
+        </div>
+    @endif
+
+    @if($showNetopagar ?? true)
+        <div class="form-group col-sm-2 mb-2">
+            <input id="netopagar" name="netopagar" type="text" class="form-control form-control-sm" readonly="">
         </div>
     @endif
 
@@ -155,7 +167,7 @@
         <div class="form-group col-sm-2 mb-2">
             <label class="my-0">Moneda:</label>
             <select class="form-control form-control-sm" id="cbomoneda" name="cbomoneda"
-                onchange="cambiaMoneda('lblmoneda', this.value)"></select>
+                onchange="cambiaMoneda('lblmoneda', this.value, 'tipomoneda')"></select>
         </div>
     @endif
 

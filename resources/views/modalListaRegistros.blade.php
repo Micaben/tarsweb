@@ -138,6 +138,8 @@
                                 url = '/buscarRegistroPedido/' + id;
                             } else if (routeName === 'registroGuia') {
                                 url = '/buscarRegistroGuia/' + id;
+                            } else if (routeName === 'registroComprobantes') {
+                                url = '/buscarRegistroComprobantes/' + id;
                             }
                             $.ajax({
                                 url: url,
@@ -153,12 +155,18 @@
                                                 let value = data[mappedProperty] !== null && data[mappedProperty] !== undefined ? data[mappedProperty] : '';
 
                                                 if ($('#' + input).is('select')) {
-                                                    // Asignar valor al select
+                                                    if (input === 'cbocomprobante' && $('#' + input).val() !== data.TipoDocumento) {
+                                                        actualizarCbocomprobanteDesdeJson(data.TipoDocumento);                                                        
+                                                    } 
                                                     $('#' + input + ' option').each(function () {
                                                         if ($(this).val() == value || $(this).text() == value) {
                                                             $(this).prop('selected', true);
                                                         }
+
                                                     });
+                                                    if (input === 'cboserie' && data.hasOwnProperty('serie')) {                                                        
+                                                        $('#' + input).val(data.serie);
+                                                    }
                                                 } else if ($('#' + input).is(':checkbox') || $('#' + input).is(':radio')) {
                                                     // Configurar valor para checkbox o radio button
                                                     if (value) {
@@ -195,6 +203,8 @@
                                             urldet = '/buscarDetallePedido/' + id;
                                         } else if (routedetalleName === 'registroGuiadetalle') {
                                             urldet = '/buscarDetalleGuia/' + id;
+                                        } else if (routedetalleName === 'registroComprobantesdetalle') {
+                                            urldet = '/buscarDetalleComprobantes/' + id;
                                         }
                                         $.ajax({
                                             url: urldet,
