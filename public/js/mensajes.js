@@ -15,6 +15,15 @@ function showErrorMessage(message) {
     });
 }
 
+function showWarningMessage(message) {
+    Swal.fire({
+        icon: "warning",
+        title: "Advertencia",
+        html: message, // Utilizar la opción html
+        allowHtml: true, // Permitir contenido HTML
+    });
+}
+
 function showSuccessWithActions(jsonData, imprimirUrl, enviarCorreoUrl) {
     let fechaInput = document.getElementById("fechaproceso").value; // ID del input tipo date
     let serieInput = document.getElementById("cboserie");

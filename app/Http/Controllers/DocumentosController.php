@@ -112,4 +112,30 @@ class DocumentosController extends Controller
         $datos = Documentos::find($id);
         return response()->json($datos);
     }
+
+    public function buscarFactura($tipod, $serie, $numero)
+    {
+        try {
+            $query = "select b.ruc,b.RazonSocial,a.Fechaemision,
+            a.Moneda,a.NumOCompra, a.ImporteTotal,a.BaseImponible,a.igv,
+            tv.Factor2,a.vendedor,
+            tv.Deascripcion,a.id
+            from comprobantesefact a inner join Cliente b on b.ruc=a.NumDocIdR
+             left join vendedores v on v.id=a.vendedor 
+             left join TablaVarios tv on a.Moneda=tv.cod and tv.clase ='MON' 
+            where a.tipodocumento=? and a.serie=? and numero=?";
+
+            $result = DB::select($query, [$tipod, $serie, $numero]);
+
+            if (!empty($result)) {
+                return response()->json(['success' => true, 'data' => $result[0]]);
+            } else {
+                return response()->json(['success' => false, 'message' => 'No se encontró ninguna guía con el ID proporcionado.']);
+            }
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Error en la consulta de la guía: ' . $e->getMessage());
+        }
+    }
+
+
 }

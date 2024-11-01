@@ -111,7 +111,8 @@
                                         </div>
                                         <div class="card-body">
                                         <x-form-fields 
-                                                
+                                        :showComprobantefactura="false" :showSerieFactura="false"   
+                                        :showNumeroFactura="false" :showFechaFactura="false"  
                                             />
                                             <x-TablaProductos
                                                 :showEliminar="true"
