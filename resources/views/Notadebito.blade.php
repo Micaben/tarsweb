@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Mycsoft - Nota de credito</title>
+    <title>Mycsoft - Nota de denito</title>
 
     <!-- Custom fonts for this template -->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -49,7 +49,7 @@
 
                     <!-- Page Heading -->
                     <div class="d-flex justify-content-between align-items-center">
-                        <h1 class="h3 mb-2 text-gray-800">Nota de credito</h1>
+                        <h1 class="h3 mb-2 text-gray-800">Nota de debito</h1>
                     </div>
                     <div class="card shadow mb-4">
                         <div class="row">
@@ -180,7 +180,7 @@
             listarOpciones("#cboalmacen", "{{ route('listar-datosalmacen') }}", 'id', 'descripcion', false);
             listarOpciones("#cbovendedor", "{{ route('listar-vendedor') }}", 'id', 'nombres', false);
             document.getElementById('lblmoneda').innerText = 'S/';
-            document.getElementById("tipodocumento").value = '07';
+            document.getElementById("tipodocumento").value = '08';
             $("#cboproveedor").prop("disabled", true);
             $("#fechafactura").prop("disabled", true);
         });
@@ -191,7 +191,7 @@
             if (cboSerie) {
                 cboSerie.addEventListener('change', function () {
                     var valorSeleccionado = this.value;
-                    var url = "{{ url('obtener-ultimonumero') }}/07/" + encodeURIComponent(
+                    var url = "{{ url('obtener-ultimonumero') }}/08/" + encodeURIComponent(
                         valorSeleccionado);
                     obtenerultimoNumero("#numeronota", url);
                 });
@@ -223,7 +223,7 @@
                     dataType: 'json',
                     success: function (response) {                
                     if (response.success) {       
-                        console.log(response)                 
+                        //console.log(response)                 
                         $("#fechafactura").val(response.data.Fechaemision);     
                         $("#cboproveedor").val(response.data.ruc);             
                         $("#proveedor").val(response.data.ruc);       
@@ -233,9 +233,8 @@
                         $("#subtotal").val(response.data.BaseImponible);
                         $("#igv").val(response.data.igv);
                         $("#totalSuma").val(response.data.ImporteTotal);  
-                        $("#lblmoneda").text(response.data.Factor2); 
-                        
-                        console.log(response.data.id);
+                        $("#lblmoneda").text(response.data.Factor2);                         
+                        //console.log(response.data.id);
                         $.ajax({
                             url: '/buscarDetalleComprobantes/' + response.data.id,
                             dataType: 'json',
@@ -265,11 +264,11 @@
                             $("#tablaIngresos").append(fila);
                         });
                                 } else {
-                                    showErrorMessage("Error al buscar el detalle de comprobantes."); // Muestra un mensaje si no se encuentra el detalle
+                                    showErrorMessage(detalleResponse.message); // Muestra un mensaje si no se encuentra el detalle
                                 }
                             },
                             error: function () {
-                                showErrorMessage("Error al buscar el detalle de comprobantes.");
+                                showErrorMessage(detalleResponse.message);
                             }
                         });
                     } else {
@@ -295,12 +294,11 @@
         }
 
         function modalNuevoRegistro() {
-            clearFormInputsSelects('form-documentos', 'cboserie');
-            limpiarTablaDataTable('form-documentos', 'tablaProductos');
+            clearFormInputsSelects('form-documento', 'cboserie');
+            limpiarTablaDataTable('form-documento', 'tablaProductos');
             var fechaActual = new Date().toISOString().split('T')[0];
             document.getElementById('fechaproceso').value = fechaActual;
             document.getElementById('mensajeAnulado').style.display = 'none';
-            
         }
 
         document.addEventListener('DOMContentLoaded', function () {

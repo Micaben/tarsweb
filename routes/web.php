@@ -217,6 +217,7 @@ Route::get('/obtener-documentos', [DocumentosController::class, 'obtenerDocument
 Route::get('/obtener-datosinputsdocumentos/{id}', [DocumentosController::class, 'obtenerDatosinputsdocumentos']);
 Route::post('/guardar-documentos', [DocumentosController::class, 'guardarDocumentoo']);
 Route::post('/modificar-documentos/{id}', [DocumentosController::class, 'modificarDocumentos']);
+Route::get('/buscar-factura/{tipod}/{serie}/{numero}', [DocumentosController::class, 'buscarFactura'])->name('buscar.factura');
 
 //SERIES
 Route::get('/obtener-series/{id}', [SeriesController::class, 'obtenerSeries'])->name('obtener-series');
@@ -330,6 +331,7 @@ Route::post('/guardar-comprobantes', [VentasComprobantesController::class, 'guar
 Route::get('/mostrarRegistrosComprobantes', [VentasComprobantesController::class, 'mostrarRegistrosComprobantes'])->name('listar-mostrarRegistrosComprobantes');
 Route::get('/buscarRegistroComprobantes/{id}', [VentasComprobantesController::class, 'buscarregistroComprobantes'])->name('buscar-registroComprobantes');
 Route::get('/buscarDetalleComprobantes/{id}', [VentasComprobantesController::class, 'buscardetalleComprobantes'])->name('buscar-detalleComprobantes');
+
 //NOTA DE CREDITO
 Route::get('/notacredito', [VentasComprobantesController::class, 'mostrarNotacreditoMantenimiento'])->name('notacredito.mantenimiento');
 

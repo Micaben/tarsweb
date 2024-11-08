@@ -115,8 +115,46 @@
             <select class="form-control form-control-sm" required="" id="cboconcepto" name="cboconcepto"></select>
         </div>
     @endif
+
+    @if($showComprobantefactura ?? true)
+        <div class="form-group col-sm-2 mb-2">
+            <label class="my-0">Comprobante:</label>
+            <select class="form-control form-control-sm" required="" id="cbocomprobante" name="cbocomprobante">
+            </select>
+        </div>
+    @endif
+
 </div>
 <div class="form-row">
+    @if($showSerieFactura ?? true)
+        <div class="form-group col-sm-1 mb-2">
+            <label class="my-0">Serie:</label>
+            <select class="form-control form-control-sm" required="" id="cboseriefactura" name="cboseriefactura"></select>
+        </div>
+    @endif
+
+    @if($showNumeroFactura ?? true)
+        <div class="form-group col-sm-2 mb-2">
+            <label class="my-0">Numero:</label>
+            <div class="input-group">
+                <input type="text" class="form-control form-control-sm" required="" name="numeroFactura" id="numeroFactura"
+                    maxlength="11" value="">
+                <span class="input-group-append">
+                    <button type="button" class="btn btn-primary btn-flat btn-sm" onclick="buscarFactura()" id="btnbuscarFactura"
+                        name="btnbuscarFactura"><i class="fa fa-search"></i></button>
+                </span>
+            </div>
+        </div>
+    @endif
+
+    @if($showFechaFactura ?? true)
+        <div class="form-group col-sm-2 mb-2">
+            <label class="my-0">Fecha Factura:</label>
+            <input id="fechafactura" type="date" class="form-control form-control-sm" required="" name="fechafactura"
+                maxlength="10">
+        </div>
+    @endif
+
     @if($showProveedor ?? true)
         <div class="form-group col-5 mb-2">
             <label class="my-0">Proveedor:</label>
