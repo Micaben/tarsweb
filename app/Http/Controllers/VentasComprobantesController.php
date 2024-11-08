@@ -19,6 +19,13 @@ use App\Services\SunatService;
 use DOMDocument;
 use DateTime;
 use Greenter\XMLSecLibs\Sunat\SignedXml;
+use Greenter\Model\Client\Client;
+use Greenter\Model\Company\Company;
+use Greenter\Model\Company\Address;
+use Greenter\Model\Sale\FormaPagos\FormaPagoContado;
+use Greenter\Model\Sale\Invoice;
+use Greenter\Model\Sale\SaleDetail;
+use Greenter\Model\Sale\Legend;
 use App\Services\ParseadorJDOM2;
 use Barryvdh\DomPDF\Facade\Pdf;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
@@ -26,7 +33,7 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 class VentasComprobantesController extends Controller
 {
     protected $sunatService;
-    
+
 
     public function __construct(SunatService $sunatService)
     {
@@ -67,9 +74,9 @@ class VentasComprobantesController extends Controller
             $this->guardarComprobantesLeyendas($request, $identpedidoId, $isNew, $Iddoc);
             $xmlGeneradoCorrectamente = $this->CrearXMLComprobante($identpedidoId);
             if ($xmlGeneradoCorrectamente) {
-                $this->sunatService-> EnviarComprobanteElectronico($fecha, $empresa, $TipoDocumento, $serie, $numero);
+                $this->sunatService->EnviarComprobanteElectronico($fecha, $empresa, $TipoDocumento, $serie, $numero);
 
-               
+
             }
             //$this->generarReportePDFComprobante($identpedidoId);
             DB::commit();
@@ -256,7 +263,7 @@ class VentasComprobantesController extends Controller
         $conRetencion = $request->input('conretencion', 0);
         $mtoretencion = $request->input('mtoretencion');
 
-        if ($conRetencion ) {
+        if ($conRetencion) {
             $comcab = new Comprobantes_Allowance();
             $comcab->id_comprobantes = $identpedidoId;
             $comcab->com_AllowanceCharge_ChargeIndicator = 'false';
@@ -419,7 +426,7 @@ class VentasComprobantesController extends Controller
 
         } else {
             Log::info('Cuotas:', ['cuotas' => $cuotas]);
-            
+
             if (empty($cuotas) || count($cuotas) === 0) {
                 Log::info('No hay cuotas, insertando registros vacíos');
 
@@ -431,10 +438,10 @@ class VentasComprobantesController extends Controller
 
                     if ($i === 0) {
                         // Primer registro
-                        $detalle->com_PaymentTerms_PaymentMeansID = 'Credito'; 
+                        $detalle->com_PaymentTerms_PaymentMeansID = 'Credito';
                     } else {
                         // Segundo registro con cuota formateada
-                        $detalle->com_PaymentTerms_PaymentMeansID ='Cuota' . str_pad('001', 3, '0', STR_PAD_LEFT); 
+                        $detalle->com_PaymentTerms_PaymentMeansID = 'Cuota' . str_pad('001', 3, '0', STR_PAD_LEFT);
                     }
 
                     $detalle->com_PaymentTerms_PaymentPercent = '0.00';
@@ -468,7 +475,7 @@ class VentasComprobantesController extends Controller
                     $detalle = new Comprobantes_paymentterms;
                     $detalle->id_comprobantes = $identpedidoId;
                     $detalle->com_PaymentTerms_ID = 'FormaPago';
-                    $numeroCuotaFormateada = 'Cuota' . str_pad('001', 3, '0', STR_PAD_LEFT); 
+                    $numeroCuotaFormateada = 'Cuota' . str_pad('001', 3, '0', STR_PAD_LEFT);
                     $detalle->com_PaymentTerms_PaymentMeansID = $numeroCuotaFormateada;
                     $detalle->com_PaymentTerms_PaymentPercent = '0.00';
                     $detalle->com_PaymentTerms_Amount = $cuota['monto'];
@@ -594,7 +601,7 @@ class VentasComprobantesController extends Controller
         }
     }
 
-    function CrearXMLComprobante($idGuia): bool
+    function CrearXMLComprobante1($idGuia): bool
     {
         $guiaRemisionObj = DB::table('comprobantesefact as ce')
             ->join('comprobantesd_tributos as ct', 'ct.Id_Comprobantes', '=', 'ce.Id')
@@ -607,7 +614,11 @@ class VentasComprobantesController extends Controller
                 'ct.cmd_TaxSubtotal_TaxCategory_TaxScheme_ID',
                 'ct.cmd_TaxSubtotal_TaxCategory_TaxScheme_Name',
                 'ct.cmd_TaxSubtotal_TaxCategory_TaxScheme_TaxTypeCode',
-                'e.Direccion', 'e.Ubigeo_emp', 'e.Ubi_Departamento', 'e.Ubi_Provincia', 'e.Ubi_Distrito',
+                'e.Direccion',
+                'e.Ubigeo_emp',
+                'e.Ubi_Departamento',
+                'e.Ubi_Provincia',
+                'e.Ubi_Distrito',
             )
             ->first();
 
@@ -616,27 +627,27 @@ class VentasComprobantesController extends Controller
             ->where('cd.Id_Comprobantes', $idGuia)
             // ->select('ce.*', 'cd.DocumentID', 'cd.DocumentTypeCode')
             ->first();
-         
+
 
         $detalles = DB::table('comprobantesd as cd')
             ->join('productos as p', 'cd.cod_Producto', '=', 'p.CodProducto')
             //->join('comprobantesd_tributos as ct', 'ct.Id_Comprobantes', '=', 'cd.Id')
             ->where('cd.id', $idGuia)
-           // ->select(
+            // ->select(
             //    'cd.*',
             //    'ct.cmd_TaxSubtotal_TaxCategory_ID',
             //    'ct.cmd_TaxSubtotal_TaxCategory_TaxScheme_ID',
-           //     'ct.cmd_TaxSubtotal_TaxCategory_TaxScheme_Name',
+            //     'ct.cmd_TaxSubtotal_TaxCategory_TaxScheme_Name',
             //    'ct.cmd_TaxSubtotal_TaxCategory_TaxScheme_TaxTypeCode'
-           // )
+            // )
             ->get();
         $numeroItems = $detalles->count();
-        
+
 
         $cuotas = DB::table('Comprobantes_paymentterms')
             ->where('Id_Comprobantes', $idGuia)
             ->get();
-    
+
         $allowance = DB::table('comprobantes_allowancecharge as ca')
             ->where('ca.Id_Comprobantes', $idGuia)
             ->first();
@@ -923,6 +934,157 @@ class VentasComprobantesController extends Controller
         return view('Notadebito');
     }
 
-    
+    function CrearXMLComprobante($idGuia): bool
+    {
+        $guiaRemisionObj = DB::table('comprobantesefact as ce')
+            ->join('comprobantesd_tributos as ct', 'ct.Id_Comprobantes', '=', 'ce.Id')
+            ->join('empresas as e', 'e.empresa', '=', 'ce.ruc')
+            ->where('ce.Id', $idGuia)
+            ->select(
+                'ce.*',
+                'ct.cmd_TaxSubtotal_TaxCategory_ID',
+                'ct.cmd_TaxSubtotal_TaxCategory_Percent',
+                'ct.cmd_TaxSubtotal_TaxCategory_TaxScheme_ID',
+                'ct.cmd_TaxSubtotal_TaxCategory_TaxScheme_Name',
+                'ct.cmd_TaxSubtotal_TaxCategory_TaxScheme_TaxTypeCode',
+                'e.Direccion',
+                'e.Ubigeo_emp',
+                'e.Ubi_Departamento',
+                'e.Ubi_Provincia',
+                'e.Ubi_Distrito',
+            )
+            ->first();
+
+        $despatch = DB::table('comprobantesdespatch as cd')
+            ->where('cd.Id_Comprobantes', $idGuia)
+            ->first();
+
+
+        $detalles = DB::table('comprobantesd as cd')
+            ->join('productos as p', 'cd.cod_Producto', '=', 'p.CodProducto')
+            ->where('cd.id', $idGuia)
+            ->get();
+        $numeroItems = $detalles->count();
+
+
+        $cuotas = DB::table('Comprobantes_paymentterms')
+            ->where('Id_Comprobantes', $idGuia)
+            ->get();
+
+        $allowance = DB::table('comprobantes_allowancecharge as ca')
+            ->where('ca.Id_Comprobantes', $idGuia)
+            ->first();
+
+        $leyendas = DB::table('comprobantesl')
+            ->where('Id_Comprobantes', $idGuia)
+            ->first();
+
+        $see = require __DIR__ . '/config.php';
+
+        // Cliente
+        $client = (new Client())
+            ->setTipoDoc($guiaRemisionObj->TipoDocIdR)
+            ->setNumDoc($guiaRemisionObj->NumDocIdR)
+            ->setRznSocial($guiaRemisionObj->RazonSocialR);
+
+        // Emisor
+        $address = (new Address())
+            ->setUbigueo($guiaRemisionObj->Ubigeo_emp)
+            ->setDepartamento($guiaRemisionObj->Ubi_Departamento)
+            ->setProvincia($guiaRemisionObj->Ubi_Departamento)
+            ->setDistrito($guiaRemisionObj->Ubi_Distrito)
+            ->setUrbanizacion('-')
+            ->setDireccion($guiaRemisionObj->Direccion)
+            ->setCodLocal('0000'); // Codigo de establecimiento asignado por SUNAT, 0000 por defecto.
+
+        $company = (new Company())
+            ->setRuc($guiaRemisionObj->Ruc)
+            ->setRazonSocial($guiaRemisionObj->RazonSocialE)
+            ->setNombreComercial($guiaRemisionObj->RazonSocialE)
+            ->setAddress($address);
+
+        // Venta
+        $invoice = (new Invoice())
+            ->setUblVersion('2.1')
+            ->setTipoOperacion($guiaRemisionObj->com_InvoiceTypeCode) // Venta - Catalog. 51
+            ->setTipoDoc($guiaRemisionObj->TipoDocIdR) // Factura - Catalog. 01 
+            ->setSerie($guiaRemisionObj->Serie)
+            ->setCorrelativo($guiaRemisionObj->Numero)
+            ->setFechaEmision(new DateTime($guiaRemisionObj->created_at)) // Zona horaria: Lima
+            ->setFormaPago(new FormaPagoContado()) // FormaPago: Contado
+            ->setTipoMoneda($guiaRemisionObj->TipoMoneda) // Sol - Catalog. 02
+            ->setCompany($company)
+            ->setClient($client)
+            ->setMtoOperGravadas($guiaRemisionObj->BaseImponible)
+            ->setMtoIGV($guiaRemisionObj->IGV)
+            ->setTotalImpuestos($guiaRemisionObj->IGV)
+            ->setValorVenta($guiaRemisionObj->BaseImponible)
+            ->setSubTotal($guiaRemisionObj->ImporteTotal)
+            ->setMtoImpVenta($guiaRemisionObj->ImporteTotal)
+        ;
+
+        $item = (new SaleDetail())
+            ->setCodProducto($detalles->cod_Producto)
+            ->setUnidad('NIU') // Unidad - Catalog. 03
+            ->setCantidad($detalles->Cantidad)
+            ->setMtoValorUnitario($detalles->ValorUnitario)
+            ->setDescripcion($detalles->Descripcion)
+            ->setMtoBaseIgv(100)
+            ->setPorcentajeIgv(18.00) // 18%
+            ->setIgv(18.00)
+            ->setTipAfeIgv($detalles->cod_afectaigv) // Gravado Op. Onerosa - Catalog. 07
+            ->setTotalImpuestos(18.00) // Suma de impuestos en el detalle
+            ->setMtoValorVenta(100.00)
+            ->setMtoPrecioUnitario($detalles->ValorUnitario)
+        ;
+
+        $legend = (new Legend())
+            ->setCode($leyendas->ley_Codigo) // Monto en letras - Catalog. 52
+            ->setValue($leyendas->ley_Texto);
+
+        $invoice->setDetails([$item])
+            ->setLegends([$legend]);
+
+        $result = $see->send($invoice);
+
+        // Guardar XML firmado digitalmente.
+        file_put_contents(
+            $invoice->getName() . '.xml',
+            $see->getFactory()->getLastXml()
+        );
+
+        // Verificamos que la conexión con SUNAT fue exitosa.
+        if (!$result->isSuccess()) {
+            // Mostrar error al conectarse a SUNAT.
+            echo 'Codigo Error: ' . $result->getError()->getCode();
+            echo 'Mensaje Error: ' . $result->getError()->getMessage();
+            exit();
+        }
+
+        // Guardamos el CDR
+        file_put_contents('R-' . $invoice->getName() . '.zip', $result->getCdrZip());
+
+        $cdr = $result->getCdrResponse();
+
+        $code = (int) $cdr->getCode();
+
+        if ($code === 0) {
+            echo 'ESTADO: ACEPTADA' . PHP_EOL;
+            if (count($cdr->getNotes()) > 0) {
+                echo 'OBSERVACIONES:' . PHP_EOL;
+                // Corregir estas observaciones en siguientes emisiones.
+                var_dump($cdr->getNotes());
+            }
+        } else if ($code >= 2000 && $code <= 3999) {
+            echo 'ESTADO: RECHAZADA' . PHP_EOL;
+        } else {
+            /* Esto no debería darse, pero si ocurre, es un CDR inválido que debería tratarse como un error-excepción. */
+            /*code: 0100 a 1999 */
+            echo 'Excepción';
+        }
+
+        echo $cdr->getDescription() . PHP_EOL;
+        return true;
+    }
 
 }

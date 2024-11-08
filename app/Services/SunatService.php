@@ -334,13 +334,13 @@ class SunatService
     $usuario_sol = '104205068500MODDATOS';
     $clave_sol = 'moddatos';
     $certificado = storage_path('certificates/certificate.pem');
-    $wsS = 'https://e-beta.sunat.gob.pe/ol-ti-itcpfegem-beta/billService?wsdl';
+    $wsS = 'https://e-beta.sunat.gob.pe/ol-ti-itcpfegem-beta/billService';
     $pass_certificado = 'userfact2022';	 
     
     // Otros parámetros y configuraciones...
     $fechaConvertida = DateTime::createFromFormat('Y-m-d', $fecha)->format('Ymd');
     $nombreArchivoZIP = session('empresa') . '-' . $tipo . '-' . $serie . '-' . $numero . '.zip';
-    $rutaCompletaZIP = public_path("/storage/Facturas/XML/{$fechaConvertida}/{$ruc}-{$tipo}-{$serie}-{$numero}.zip");
+    $rutaCompletaZIP = public_path("storage/Facturas/XML/{$fechaConvertida}/{$ruc}-{$tipo}-{$serie}-{$numero}.zip");
     
     // Leer y codificar el archivo ZIP en base64
     if (!file_exists($rutaCompletaZIP)) {
@@ -362,7 +362,7 @@ class SunatService
                         <soapenv:Body>
                         <ser:sendBill>
                             <fileName>' . $nombreArchivoZIP . '</fileName>
-                            <contentFile>cid:' . $nombreArchivoZIP . '</contentFile>
+                            <contentFile>cid:' . $contenido_del_zip . '</contentFile>
                         </ser:sendBill>
                         </soapenv:Body>
                     </soapenv:Envelope>';
@@ -386,11 +386,11 @@ class SunatService
     curl_setopt($ch, CURLOPT_POSTFIELDS, $xml_envio);
     curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
     curl_setopt($ch, CURLOPT_VERBOSE, true);  // Activa la salida de depuración
-    curl_setopt($ch, CURLOPT_CAINFO, storage_path('certificates/cacert.pem')); 
-
+    curl_setopt($ch, CURLOPT_CAINFO,  storage_path('certificates/cacert.pem')); 
+    //curl_setopt($ch, CURLOPT_CAINFO, dirname(__FILE__) . "/cacert.pem");                    
     $response = curl_exec($ch);
     $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    
+                    
     if ($response === false) {
         Log::error("cURL Error: " . curl_error($ch));
         curl_close($ch);
